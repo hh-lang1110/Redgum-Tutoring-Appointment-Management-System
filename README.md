@@ -54,6 +54,6 @@ tests/smoke_test.py  # CI smoke test
 ## Branching
 
 - `main` - release v1.0.0
-- `feature/vivian-requirements` - requirements & data model
-- `feature/charon-technical` - Flask app, config, deployment, CI
-- `feature/eva-project-integration` - README, CHANGELOG, CI
+- `feature/ke-requirements` - requirements & data model
+- `feature/han-technical` - Flask app, config, deployment, CI
+- `feature/liu-project-integration` - README, CHANGELOG, CI

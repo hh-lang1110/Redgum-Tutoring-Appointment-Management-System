@@ -1,6 +1,6 @@
 """Entry point for local development.
 
-Author: Charon (Technical Lead)
+Author: Han (Technical Lead)
 """
 from app import create_app
 
