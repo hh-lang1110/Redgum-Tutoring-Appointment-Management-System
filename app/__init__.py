@@ -7,8 +7,12 @@ from .seed import seed_database
 
 
 def create_app(config_name=None):
+    config_class = get_config(config_name)
     app = Flask(__name__, instance_relative_config=False)
-    app.config.from_object(get_config(config_name))
+    app.config.from_object(config_class)
+    # from_object() only copies uppercase attributes; it never calls init_app,
+    # so every per-environment guard stays dormant unless we invoke it here.
+    config_class.init_app(app)
     os.makedirs(app.instance_path, exist_ok=True)
     db.init_app(app)
 
