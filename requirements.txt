@@ -4,4 +4,7 @@ Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.1.0
 alembic==1.20.0
 python-dotenv==1.0.1
+# PostgreSQL driver for the production database. Without it the
+# DATABASE_URL=postgresql://... setting fails at connect time.
+psycopg2-binary==2.9.10
 gunicorn==23.0.0

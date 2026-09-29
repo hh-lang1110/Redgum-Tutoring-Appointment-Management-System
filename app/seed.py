@@ -1,7 +1,8 @@
 ﻿"""Seed data aligned with case-study Document A (Tomas availability) and
 Document B (Week 5 diary). Dates: 11-15 August 2026 (Tue-Sat)."""
 from datetime import date
-from .models import db, Tutor, TutorAvailability, Student, Session
+
+from .models import Session, Student, Tutor, TutorAvailability, db
 
 
 def seed_database():

@@ -12,6 +12,10 @@ instance/
 *.sqlite3
 *.db
 
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+
 # IDE
 .vscode/
 .idea/

@@ -1,29 +1,81 @@
-﻿name: CI
+name: CI
 
 on:
   push:
-    branches: [ main, "feature/**" ]
+    branches: [main, "feature/**", "fix/**", "build/**", "docs/**", "chore/**"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  build:
+  test:
+    name: Lint and test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
+      # Report every version's result rather than stopping at the first.
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Smoke-test application factory
+          pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Run tests
         env:
           FLASK_ENV: testing
           PYTHONPATH: .
+        run: pytest
+
+  migrations:
+    name: Migrations match the models
+    runs-on: ubuntu-latest
+    env:
+      FLASK_ENV: development
+      DATABASE_URL: sqlite:////tmp/ci.sqlite3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
         run: |
-          python -c "from app import create_app; app = create_app('testing'); print('routes:', len(list(app.url_map.iter_rules())))"
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Migrations build the schema and apply cleanly
+        run: |
+          flask db upgrade
+          flask db upgrade   # a second run must be a no-op, not an error
+
+      - name: Models and migrations agree
+        # If a model changed without a migration, autogenerate produces a new
+        # revision. That is the drift this check exists to catch: it is the
+        # failure that let the room columns go missing in the first place.
+        run: |
+          count_before=$(ls migrations/versions/*.py | wc -l)
+          flask db migrate -m "ci drift check"
+          count_after=$(ls migrations/versions/*.py | wc -l)
+          if [ "$count_before" != "$count_after" ]; then
+            echo "::error::Models have changed without a migration."
+            ls migrations/versions/
+            exit 1
+          fi
+
+      - name: The baseline migration is reversible
+        run: |
+          flask db downgrade base
+          flask db upgrade
