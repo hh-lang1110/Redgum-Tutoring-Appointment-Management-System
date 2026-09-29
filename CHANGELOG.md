@@ -90,26 +90,32 @@ point contained and what was wrong with it.
 
 ## Origin
 
-The project began as a prototype imported in a single commit
-(`chore: import Redgum Tutoring prototype as project baseline`). That
-starting point arrived without version control history, and its working
-tree contradicted its own documentation:
+This release branches from the team repository's `main` at the commit
+`refactor: align domain model with case study`, which is the shared
+starting point. Everything below describes that branch point, so a reader
+can tell what this release added from what it inherited.
 
-- `CHANGELOG.md` and `docs/requirements.md` described a statistics
-  dashboard, room conflict detection and a filterable timetable, none of
-  which existed in the code.
-- `docs/requirements.md` specified a `Booking` model; the code defined
+The inherited tree contradicted its own documentation:
+
+- `docs/requirements.md` still specifies a statistics dashboard
+  (ST-1 to ST-4), but `app/routes/stats.py` and its template were removed
+  by that refactor, so nothing implemented the requirement.
+- The same document specified a `Booking` model; the code had settled on
   `Session`, with different field names.
-- Author attributions named people who were not on the project team.
-- `ProductionConfig.init_app` was dead code that Flask never invoked.
-- There were no migrations, so `db.create_all()` could not apply new
-  columns to an existing database.
-- The only automated check was a smoke script whose `main()` pytest never
-  collected.
+- There were no migrations. The schema came from `db.create_all()`, which
+  cannot add a column to an existing table, so an installed database
+  drifted from the models with no error until a query touched the
+  missing column.
+- `ProductionConfig.init_app` was dead code that Flask never invoked,
+  because `Config.from_object` only copies uppercase attributes.
+- `Procfile` released with `flask seed-db`, which would have inserted the
+  demo tutors and students into the production database.
+- The only automated check was `tests/smoke_test.py`, whose `main()` the
+  pytest configuration never collected. CI in turn ran an import check
+  only; the route tests were verified by hand.
 
 Version 1.0.0 is the first release in which the implementation, the
 requirements and this changelog describe the same system.
 
-<!-- Replace OWNER/REPO with the GitHub repository this project is published to. -->
-[Unreleased]: https://github.com/OWNER/REPO/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/OWNER/REPO/releases/tag/v1.0.0
+[Unreleased]: https://github.com/hh-lang1110/Redgum-Tutoring-Appointment-Management-System/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/hh-lang1110/Redgum-Tutoring-Appointment-Management-System/releases/tag/v1.0.0
