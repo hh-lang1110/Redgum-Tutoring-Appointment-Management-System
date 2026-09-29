@@ -29,11 +29,43 @@ python -m venv .venv
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # Windows: copy .env.example .env
-flask --app run.py seed-db    # optional: insert demo data
+flask db upgrade              # create/update the schema
+flask seed-db                 # optional: insert demo data (also migrates)
 python run.py
 ```
 
 Open http://127.0.0.1:5000/
+
+## Database migrations
+
+The schema is owned by Alembic migrations under `migrations/`. The application
+never creates tables itself outside the test suite, because
+`db.create_all()` only adds *missing tables* and silently ignores new
+*columns* on a table that already exists - which is exactly the kind of drift
+that went unnoticed in the prototype.
+
+```bash
+flask db upgrade                        # apply pending migrations
+flask db migrate -m "add X to Y"        # generate a migration from model changes
+flask db downgrade                      # roll back one revision
+flask db current                        # show the revision the DB is on
+```
+
+Always read a generated migration before committing it; Alembic does not detect
+column renames and will emit a drop plus an add, which loses data.
+
+### If you have a database from before migrations existed
+
+The baseline migration (`initial schema`) creates every table from scratch, so
+it cannot be applied on top of a database that already has them - `flask db
+upgrade` will stop with `table students already exists`. Such a database also
+predates the `room`, `qualification`, `email` and `parent_name` columns, so
+stamping it as current would be wrong. Delete it and rebuild:
+
+```bash
+rm instance/redgum.sqlite3     # Windows: del instance\redgum.sqlite3
+flask db upgrade && flask seed-db
+```
 
 ## Project layout
 
