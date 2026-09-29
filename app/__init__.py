@@ -20,11 +20,13 @@ def create_app(config_name=None):
     from .routes.students import bp as students_bp
     from .routes.sessions import bp as sessions_bp
     from .routes.schedule import bp as schedule_bp
+    from .routes.stats import bp as stats_bp
 
     app.register_blueprint(tutors_bp, url_prefix="/tutors")
     app.register_blueprint(students_bp, url_prefix="/students")
     app.register_blueprint(sessions_bp, url_prefix="/sessions")
     app.register_blueprint(schedule_bp, url_prefix="/schedule")
+    app.register_blueprint(stats_bp, url_prefix="/stats")
 
     @app.route("/")
     def index():
