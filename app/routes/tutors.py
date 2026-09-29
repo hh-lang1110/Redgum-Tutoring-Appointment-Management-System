@@ -2,9 +2,12 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from ..models import WEEKDAY_NAMES, Tutor, TutorAvailability, db
-from ..validation import length_errors, window_error
+from ..validation import LAST_BOOKABLE_WEEKDAY, length_errors, window_error
 
 bp = Blueprint("tutors", __name__, url_prefix="/tutors")
+
+# Availability can only be recorded for days the timetable displays.
+BOOKABLE_DAYS = WEEKDAY_NAMES[:LAST_BOOKABLE_WEEKDAY + 1]
 
 
 @bp.route("/")
@@ -55,7 +58,7 @@ def edit_tutor(tutor_id):
         if errors:
             for message in errors:
                 flash(message, "danger")
-            return render_template("tutors/form.html", tutor=t, weekdays=WEEKDAY_NAMES)
+            return render_template("tutors/form.html", tutor=t, weekdays=BOOKABLE_DAYS)
         t.name = values["name"] or t.name
         t.subjects = values["subjects"] or t.subjects
         t.qualification = values["qualification"]
@@ -69,7 +72,7 @@ def edit_tutor(tutor_id):
             flash(f"{t.name} reactivated.", "success")
         db.session.commit()
         return redirect(url_for("tutors.list_tutors"))
-    return render_template("tutors/form.html", tutor=t, weekdays=WEEKDAY_NAMES)
+    return render_template("tutors/form.html", tutor=t, weekdays=BOOKABLE_DAYS)
 
 
 @bp.route("/<int:tutor_id>/availability/add", methods=["POST"])
@@ -81,7 +84,7 @@ def add_availability(tutor_id):
         dow = int(request.form.get("day_of_week", -1))
     except (TypeError, ValueError):
         dow = -1
-    if not 0 <= dow <= 6:
+    if not 0 <= dow <= LAST_BOOKABLE_WEEKDAY:
         flash("Choose a weekday for the availability window.", "danger")
         return redirect(url_for("tutors.edit_tutor", tutor_id=t.id))
 

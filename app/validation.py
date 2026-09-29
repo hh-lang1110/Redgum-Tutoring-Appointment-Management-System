@@ -15,6 +15,13 @@ tutor unbookable with no error anywhere.
 """
 from .models import to_minutes
 
+# The weekly grid renders Monday to Saturday, so Saturday is the last
+# bookable weekday (TT-1).
+LAST_BOOKABLE_WEEKDAY = 5
+
+MIN_DURATION_MINUTES = 30
+MAX_DURATION_MINUTES = 480
+
 # Field name -> maximum length, mirroring the column widths in models.py.
 MAX_LENGTH = {
     "name": 120,
@@ -65,6 +72,43 @@ def length_errors(values):
             label = LABELS.get(field, field.replace("_", " ").capitalize())
             errors.append(f"{label} must be {limit} characters or fewer.")
     return errors
+
+
+def duration_error(minutes):
+    """Validate a session length, or return ``None`` when it is usable.
+
+    A non-positive duration is the dangerous case rather than a cosmetic one.
+    Every time-based rule here compares a start against an end, so a session
+    with a negative length ends before it begins. It then passes
+    ``can_fit`` - the "end" falls inside the availability window - and
+    ``overlaps`` reports no collision with anything, because the comparison
+    that would find one is false by construction. The result is a session
+    that can be booked directly on top of an existing lesson without the
+    conflict check firing, and that renders as an end time earlier than its
+    start.
+    """
+    if minutes is None:
+        return "Duration is required."
+    if minutes < MIN_DURATION_MINUTES:
+        return f"Duration must be at least {MIN_DURATION_MINUTES} minutes."
+    if minutes > MAX_DURATION_MINUTES:
+        return f"Duration must be no more than {MAX_DURATION_MINUTES} minutes."
+    return None
+
+
+def timetable_day_error(day):
+    """Reject a date the weekly timetable cannot display.
+
+    The grid covers Monday to Saturday (TT-1). A session on a Sunday is
+    accepted, stored and counted by the statistics dashboard, but appears
+    nowhere in the timetable, so staff would have no way to see a lesson
+    they had booked.
+    """
+    if day is None:
+        return "A valid date is required."
+    if day > LAST_BOOKABLE_WEEKDAY:
+        return "Sessions can only be booked Monday to Saturday."
+    return None
 
 
 def window_error(start, end, existing=()):
