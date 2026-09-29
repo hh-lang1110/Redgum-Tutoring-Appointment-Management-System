@@ -1,9 +1,15 @@
 ﻿"""Flask application factory."""
 import os
 from flask import Flask, redirect, url_for
+from flask_migrate import Migrate, upgrade
 from .config import get_config
 from .models import db
 from .seed import seed_database
+
+# SQLite cannot ALTER or DROP a column in place, so Alembic has to rebuild the
+# table for those operations. Batch mode makes it emit that rebuild instead of
+# generating SQL the database will reject.
+migrate = Migrate(render_as_batch=True)
 
 
 def create_app(config_name=None):
@@ -15,6 +21,7 @@ def create_app(config_name=None):
     config_class.init_app(app)
     os.makedirs(app.instance_path, exist_ok=True)
     db.init_app(app)
+    migrate.init_app(app, db)
 
     from .routes.tutors import bp as tutors_bp
     from .routes.students import bp as students_bp
@@ -34,9 +41,11 @@ def create_app(config_name=None):
 
     @app.cli.command("seed-db")
     def seed_db_command():
-        db.create_all()
+        """Bring the schema up to date, then load the demo data."""
+        upgrade()
         seed_database()
 
-    with app.app_context():
-        db.create_all()
+    if app.config.get("AUTO_CREATE_SCHEMA"):
+        with app.app_context():
+            db.create_all()
     return app
