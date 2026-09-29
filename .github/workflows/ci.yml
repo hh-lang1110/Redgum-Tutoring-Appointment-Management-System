@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, "feature/**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Smoke-test application factory
+        env:
+          FLASK_ENV: testing
+        run: |
+          python -c "from app import create_app; app = create_app('testing'); print('routes:', len(list(app.url_map.iter_rules())))"
+      - name: Seed and hit every page
+        env:
+          FLASK_ENV: testing
+        run: |
+          python - <<'PY'
+          from app import create_app
+          from app.models import db
+          app = create_app('testing')
+          with app.app_context():
+              db.create_all()
+              from app.seed import seed_database
+              seed_database()
+              c = app.test_client()
+              for url in ['/', '/stats/', '/tutors/', '/students/', '/bookings/', '/timetable/']:
+                  r = c.get(url)
+                  assert r.status_code == 200 or r.status_code == 302, (url, r.status_code)
+              print('all pages OK')
+          PY

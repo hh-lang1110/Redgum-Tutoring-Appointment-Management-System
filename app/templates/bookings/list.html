@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Bookings · Redgum Tutoring{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <h1>Bookings</h1>
+  <a class="btn btn-primary" href="{{ url_for('bookings.create_booking') }}">+ New Booking</a>
+</div>
+<table class="table table-striped mt-3">
+  <thead><tr>
+    <th>Day</th><th>Time</th><th>Subject</th><th>Tutor</th><th>Student</th><th>Room</th><th></th>
+  </tr></thead>
+  <tbody>
+  {% for b in bookings %}
+    <tr>
+      <td>{{ b.weekday_name() }}</td>
+      <td>{{ b.start_time }}–{{ b.end_time() }}</td>
+      <td>{{ b.subject }}</td>
+      <td>{{ b.tutor.name }}</td>
+      <td>{{ b.student.name }}</td>
+      <td>{{ b.room }}</td>
+      <td>
+        <form method="post" action="{{ url_for('bookings.cancel_booking', booking_id=b.id) }}"
+              onsubmit="return confirm('Cancel this booking?');">
+          <button class="btn btn-sm btn-outline-danger">Cancel</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7">No bookings yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
