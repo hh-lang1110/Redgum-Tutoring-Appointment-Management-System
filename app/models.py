@@ -4,8 +4,9 @@ Domain model aligned with the case study:
 - Tutor has availability windows (day_of_week, start, end).
 - Session books one student with one tutor on a real date, with a status lifecycle.
 - Core rule: a session must fall entirely inside one of the tutor's availability
-  windows for that weekday. Room allocation and double-booking detection are
-  explicitly out of scope per the brief.
+  windows for that weekday.
+- Each session records the room it occupies, so the centre can publish a
+  room-by-room view alongside the tutor and student views.
 
 Author: Ke (Business & Requirements); implementation by Han (Technical Lead).
 """
@@ -38,7 +39,9 @@ class Tutor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     subjects = db.Column(db.String(255), nullable=False)
+    qualification = db.Column(db.String(120), default="")
     phone = db.Column(db.String(40), default="")
+    email = db.Column(db.String(120), default="")
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -104,8 +107,9 @@ class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     year_level = db.Column(db.String(20), default="")
-    parent_contact = db.Column(db.String(120), default="")
+    parent_name = db.Column(db.String(120), default="")
     parent_phone = db.Column(db.String(40), default="")
+    parent_email = db.Column(db.String(120), default="")
     enrolled_subjects = db.Column(db.String(255), default="")
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -126,6 +130,7 @@ class Session(db.Model):
     session_date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.String(5), nullable=False)
     duration_minutes = db.Column(db.Integer, default=60, nullable=False)
+    room = db.Column(db.String(40), default="")
     status = db.Column(db.String(20), default="booked", nullable=False)
     notes = db.Column(db.String(255), default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

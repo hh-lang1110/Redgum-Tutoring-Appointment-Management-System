@@ -38,6 +38,7 @@ def new_session():
         d = _parse_date(request.form.get("session_date", ""))
         start_time = request.form.get("start_time", "").strip()
         duration = request.form.get("duration_minutes", 60, type=int)
+        room = request.form.get("room", "").strip()
         if not (tutor_id and student_id and subject and d and start_time and duration):
             flash("All fields are required.", "danger")
             return render_template("sessions/form.html", tutors=tutors, students=students)
@@ -49,7 +50,7 @@ def new_session():
                                    form=request.form)
         s = Session(tutor_id=tutor_id, student_id=student_id, subject=subject,
                     session_date=d, start_time=start_time, duration_minutes=duration,
-                    status="booked")
+                    room=room, status="booked")
         db.session.add(s)
         db.session.commit()
         flash(f"Session booked: {tutor.name} with student on {d}.", "success")
@@ -64,6 +65,7 @@ def move_session(sid):
         d = _parse_date(request.form.get("session_date", ""))
         start_time = request.form.get("start_time", "").strip()
         duration = request.form.get("duration_minutes", s.duration_minutes, type=int)
+        room = request.form.get("room", s.room).strip()
         if not (d and start_time):
             flash("Date and start time are required.", "danger")
         else:
@@ -75,6 +77,7 @@ def move_session(sid):
                 s.session_date = d
                 s.start_time = start_time
                 s.duration_minutes = duration
+                s.room = room
                 db.session.commit()
                 flash("Session moved.", "success")
                 return redirect(url_for("sessions.list_sessions"))

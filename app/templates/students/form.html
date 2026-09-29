@@ -9,10 +9,12 @@
     <input class="form-control" name="year_level" value="{{ student.year_level or '' }}" placeholder="Year 10"></div>
   <div class="col-md-3"><label class="form-label">Subjects</label>
     <input class="form-control" name="enrolled_subjects" value="{{ student.enrolled_subjects or '' }}"></div>
-  <div class="col-md-6"><label class="form-label">Parent contact</label>
-    <input class="form-control" name="parent_contact" value="{{ student.parent_contact or '' }}"></div>
-  <div class="col-md-6"><label class="form-label">Parent phone</label>
+  <div class="col-md-4"><label class="form-label">Parent name</label>
+    <input class="form-control" name="parent_name" value="{{ student.parent_name or '' }}"></div>
+  <div class="col-md-4"><label class="form-label">Parent phone</label>
     <input class="form-control" name="parent_phone" value="{{ student.parent_phone or '' }}"></div>
+  <div class="col-md-4"><label class="form-label">Parent email</label>
+    <input type="email" class="form-control" name="parent_email" value="{{ student.parent_email or '' }}"></div>
   <div class="col-12">
     <button class="btn btn-primary">Save</button>
     {% if student.id and student.is_active %}

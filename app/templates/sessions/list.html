@@ -12,13 +12,14 @@
   <div class="col-auto"><a class="btn btn-link" href="{{ url_for('sessions.list_sessions') }}">Clear</a></div>
 </form>
 <table class="table table-striped">
-  <thead><tr><th>Date</th><th>Day</th><th>Start</th><th>End</th><th>Student</th><th>Tutor</th><th>Subject</th><th>Status</th><th></th></tr></thead>
+  <thead><tr><th>Date</th><th>Day</th><th>Start</th><th>End</th><th>Student</th><th>Tutor</th><th>Subject</th><th>Room</th><th>Status</th><th></th></tr></thead>
   <tbody>
   {% for s in sessions %}
     <tr class="{% if s.status == 'cancelled' %}table-secondary{% elif s.status == 'missed' %}table-warning{% endif %}">
       <td>{{ s.session_date }}</td><td>{{ s.weekday_name() }}</td>
       <td>{{ s.start_time }}</td><td>{{ s.end_time() }}</td>
       <td>{{ s.student.name }}</td><td>{{ s.tutor.name }}</td><td>{{ s.subject }}</td>
+      <td>{{ s.room }}</td>
       <td><span class="badge bg-info">{{ s.status }}</span></td>
       <td>
         <a class="btn btn-sm btn-outline-primary" href="{{ url_for('sessions.move_session', sid=s.id) }}">Move</a>
@@ -33,7 +34,7 @@
       </td>
     </tr>
   {% else %}
-    <tr><td colspan="9" class="text-muted">No sessions.</td></tr>
+    <tr><td colspan="10" class="text-muted">No sessions.</td></tr>
   {% endfor %}
   </tbody>
 </table>

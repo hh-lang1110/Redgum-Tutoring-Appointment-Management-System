@@ -6,12 +6,13 @@
   <a class="btn btn-primary" href="{{ url_for('students.new_student') }}">+ Add student</a>
 </div>
 <table class="table table-striped">
-  <thead><tr><th>Name</th><th>Year</th><th>Parent contact</th><th>Phone</th><th>Subjects</th><th>Status</th><th></th></tr></thead>
+  <thead><tr><th>Name</th><th>Year</th><th>Parent</th><th>Contact</th><th>Subjects</th><th>Status</th><th></th></tr></thead>
   <tbody>
   {% for s in students %}
     <tr>
-      <td>{{ s.name }}</td><td>{{ s.year_level }}</td><td>{{ s.parent_contact }}</td>
-      <td>{{ s.parent_phone }}</td><td>{{ s.enrolled_subjects }}</td>
+      <td>{{ s.name }}</td><td>{{ s.year_level }}</td><td>{{ s.parent_name }}</td>
+      <td>{{ s.parent_phone }}{% if s.parent_email %}<br><span class="text-muted small">{{ s.parent_email }}</span>{% endif %}</td>
+      <td>{{ s.enrolled_subjects }}</td>
       <td>{% if s.is_active %}<span class="badge bg-success">active</span>{% else %}<span class="badge bg-secondary">inactive</span>{% endif %}</td>
       <td>
         <a class="btn btn-sm btn-outline-primary" href="{{ url_for('students.edit_student', student_id=s.id) }}">Edit</a>

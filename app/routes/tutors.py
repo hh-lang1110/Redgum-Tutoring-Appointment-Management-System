@@ -16,11 +16,14 @@ def new_tutor():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         subjects = request.form.get("subjects", "").strip()
+        qualification = request.form.get("qualification", "").strip()
         phone = request.form.get("phone", "").strip()
+        email = request.form.get("email", "").strip()
         if not name or not subjects:
             flash("Name and subjects are required.", "danger")
             return render_template("tutors/form.html", tutor={})
-        t = Tutor(name=name, subjects=subjects, phone=phone)
+        t = Tutor(name=name, subjects=subjects, qualification=qualification,
+                  phone=phone, email=email)
         db.session.add(t)
         db.session.commit()
         flash(f"Tutor {name} created. Add their availability next.", "success")
@@ -34,7 +37,9 @@ def edit_tutor(tutor_id):
     if request.method == "POST":
         t.name = request.form.get("name", t.name).strip() or t.name
         t.subjects = request.form.get("subjects", t.subjects).strip() or t.subjects
+        t.qualification = request.form.get("qualification", t.qualification).strip()
         t.phone = request.form.get("phone", t.phone).strip()
+        t.email = request.form.get("email", t.email).strip()
         if request.form.get("deactivate"):
             t.is_active = False
             flash(f"{t.name} deactivated (past sessions are kept).", "warning")
