@@ -4,7 +4,7 @@ from datetime import date, datetime
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from ..models import SESSION_STATUSES, Session, Student, Tutor, db
-from ..validation import length_errors
+from ..validation import duration_error, length_errors, timetable_day_error
 from ._util import safe_redirect_target
 
 bp = Blueprint("sessions", __name__, url_prefix="/sessions")
@@ -45,8 +45,17 @@ def new_session():
         room = request.form.get("room", "").strip()
         notes = request.form.get("notes", "").strip()
         errors = length_errors({"subject": subject, "room": room, "notes": notes})
-        if not (tutor_id and student_id and subject and d and start_time and duration):
+        if not (tutor_id and student_id and subject and d and start_time):
             errors.append("All fields are required.")
+        # An out-of-range duration is reported on its own terms rather than as
+        # a missing field, so a negative value cannot slip through as valid.
+        problem = duration_error(duration)
+        if problem:
+            errors.append(problem)
+        if d is not None:
+            problem = timetable_day_error(d.weekday())
+            if problem:
+                errors.append(problem)
         if errors:
             for message in errors:
                 flash(message, "danger")
@@ -105,6 +114,13 @@ def move_session(sid):
         errors = length_errors({"room": room})
         if not (d and start_time):
             errors.append("Date and start time are required.")
+        problem = duration_error(duration)
+        if problem:
+            errors.append(problem)
+        if d is not None:
+            problem = timetable_day_error(d.weekday())
+            if problem:
+                errors.append(problem)
         if errors:
             for message in errors:
                 flash(message, "danger")

@@ -188,6 +188,91 @@ def test_move_outside_availability_is_refused(client, app, booking):
     assert Session.query.one().start_time == "16:00"
 
 
+def test_zero_duration_is_refused(client, app, booking):
+    tutor, student = booking
+    response = post_booking(client, tutor, student, duration_minutes="0")
+    assert b"at least" in response.data
+    assert Session.query.count() == 0
+
+
+def test_negative_duration_is_refused(client, app, booking):
+    """A negative length must not be stored as a valid session."""
+    tutor, student = booking
+    response = post_booking(client, tutor, student, duration_minutes="-60")
+    assert b"at least" in response.data
+    assert Session.query.count() == 0
+
+
+def test_absurd_duration_is_refused(client, app, booking):
+    tutor, student = booking
+    response = post_booking(client, tutor, student, duration_minutes="100000")
+    assert b"no more than" in response.data
+    assert Session.query.count() == 0
+
+
+def test_negative_duration_is_refused_when_moving(client, app, booking):
+    tutor, student = booking
+    post_booking(client, tutor, student, start_time="16:00")
+    session = Session.query.one()
+    response = client.post(f"/sessions/{session.id}/move",
+                           data={"session_date": MONDAY, "start_time": "16:00",
+                                 "duration_minutes": "-120", "room": "Room 1"},
+                           follow_redirects=True)
+    assert b"at least" in response.data
+    assert Session.query.one().duration_minutes == 60
+
+
+def test_negative_duration_would_otherwise_evade_the_clash_check(client, app, booking):
+    """Why the duration bound matters rather than being cosmetic.
+
+    A session that ends before it starts fails every overlap comparison, so
+    without the bound it could be booked straight on top of an existing
+    lesson without the conflict check firing.
+    """
+    tutor, student = booking
+    post_booking(client, tutor, student, start_time="16:00", duration_minutes="60")
+    response = post_booking(client, tutor, student, start_time="16:30", duration_minutes="-60")
+    assert b"at least" in response.data
+    assert Session.query.count() == 1
+
+
+# --------------------------------------------------------------------------
+# The timetable covers Monday to Saturday (TT-1)
+# --------------------------------------------------------------------------
+
+SUNDAY = "2026-08-16"   # weekday 6
+
+
+def test_sunday_booking_is_refused(client, app, make_tutor, make_student):
+    """A Sunday session would be stored and counted but never displayed."""
+    tutor = make_tutor(windows=[(6, "09:00", "12:00")])
+    student = make_student()
+    response = post_booking(client, tutor, student, session_date=SUNDAY,
+                            start_time="09:30")
+    assert b"Monday to Saturday" in response.data
+    assert Session.query.count() == 0
+
+
+def test_saturday_booking_is_still_allowed(client, app, make_tutor, make_student):
+    tutor = make_tutor(windows=[(5, "09:00", "12:00")])
+    student = make_student()
+    response = post_booking(client, tutor, student, session_date="2026-08-15",
+                            start_time="09:30")
+    assert b"Session booked" in response.data
+
+
+def test_moving_a_session_to_sunday_is_refused(client, app, booking):
+    tutor, student = booking
+    post_booking(client, tutor, student, start_time="16:00")
+    session = Session.query.one()
+    response = client.post(f"/sessions/{session.id}/move",
+                           data={"session_date": SUNDAY, "start_time": "16:00",
+                                 "duration_minutes": "60", "room": "Room 1"},
+                           follow_redirects=True)
+    assert b"Monday to Saturday" in response.data
+    assert Session.query.one().session_date == date(2026, 8, 10)
+
+
 def make_second_session(tutor, student, start_time):
     from app.models import db
     session = Session(tutor_id=tutor.id, student_id=student.id, subject="Mathematics",

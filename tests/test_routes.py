@@ -122,6 +122,22 @@ def test_invalid_weekday_is_refused(client, app, make_tutor):
     assert TutorAvailability.query.count() == 0
 
 
+def test_sunday_availability_is_refused(client, app, make_tutor):
+    """Sunday windows could never be used, since the grid stops at Saturday."""
+    tutor = make_tutor(windows=[])
+    response = add_window(client, tutor, weekday=6)
+    assert b"Choose a weekday" in response.data
+    assert TutorAvailability.query.count() == 0
+
+
+def test_the_day_dropdown_offers_monday_to_saturday(client, app, make_tutor):
+    tutor = make_tutor(windows=[])
+    body = client.get(f"/tutors/{tutor.id}").data.decode()
+    dropdown = body.split('name="day_of_week"')[1].split("</select>")[0]
+    assert "Monday" in dropdown and "Saturday" in dropdown
+    assert "Sunday" not in dropdown
+
+
 def test_window_can_be_deleted(client, app, make_tutor):
     make_tutor(windows=[(0, "15:00", "19:00")])
     window = TutorAvailability.query.one()
