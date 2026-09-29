@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Tutors · Redgum Tutoring{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <h1>Tutors</h1>
+  <a class="btn btn-primary" href="{{ url_for('tutors.create_tutor') }}">+ New Tutor</a>
+</div>
+<table class="table table-striped mt-3">
+  <thead><tr>
+    <th>Name</th><th>Subjects</th><th>Qualification</th><th>Contact</th><th>Status</th><th></th>
+  </tr></thead>
+  <tbody>
+  {% for t in tutors %}
+    <tr>
+      <td>{{ t.name }}</td>
+      <td>{{ t.subjects }}</td>
+      <td>{{ t.qualification }}</td>
+      <td>{{ t.phone }}<br>{{ t.email }}</td>
+      <td>{% if t.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+      <td><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('tutors.edit_tutor', tutor_id=t.id) }}">Edit</a></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6">No tutors yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
