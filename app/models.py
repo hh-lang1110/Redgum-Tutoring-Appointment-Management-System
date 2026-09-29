@@ -23,14 +23,24 @@ WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday",
 SESSION_STATUSES = ["booked", "attended", "cancelled", "missed"]
 
 
-def _parse_hhmm(value):
+def _to_minutes(value):
+    """Minutes past midnight for an 'HH:MM' string, or None if it is invalid."""
     if not value:
         return None
     try:
-        hh, mm = value.split(":")
-        return time(int(hh), int(mm))
-    except Exception:
+        hh, mm = str(value).split(":")
+        hours, minutes = int(hh), int(mm)
+    except (AttributeError, ValueError):
         return None
+    if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+        return None
+    return hours * 60 + minutes
+
+
+def _parse_hhmm(value):
+    """A datetime.time for an 'HH:MM' string, or None if it is invalid."""
+    total = _to_minutes(value)
+    return None if total is None else time(total // 60, total % 60)
 
 
 class Tutor(db.Model):
@@ -53,6 +63,11 @@ class Tutor(db.Model):
 
     def subject_list(self):
         return [s.strip() for s in (self.subjects or "").split(",") if s.strip()]
+
+    def teaches(self, subject):
+        """True if ``subject`` is one this tutor is listed to teach."""
+        wanted = (subject or "").strip().casefold()
+        return bool(wanted) and wanted in {s.casefold() for s in self.subject_list()}
 
     def windows_for(self, weekday):
         return [w for w in self.availability if w.day_of_week == weekday]
@@ -119,6 +134,11 @@ class Student(db.Model):
     def subject_list(self):
         return [s.strip() for s in (self.enrolled_subjects or "").split(",") if s.strip()]
 
+    def enrolled_in(self, subject):
+        """True if the student is enrolled in ``subject``."""
+        wanted = (subject or "").strip().casefold()
+        return bool(wanted) and wanted in {s.casefold() for s in self.subject_list()}
+
 
 class Session(db.Model):
     __tablename__ = "sessions"
@@ -138,12 +158,60 @@ class Session(db.Model):
     tutor = db.relationship("Tutor", back_populates="sessions")
     student = db.relationship("Student", back_populates="sessions")
 
+    def start_minutes(self):
+        """Minutes past midnight for the session start, or None if invalid."""
+        return _to_minutes(self.start_time)
+
+    def end_minutes(self):
+        """Minutes past midnight for the session end, or None if invalid."""
+        start = self.start_minutes()
+        return None if start is None else start + int(self.duration_minutes or 60)
+
     def end_time(self):
-        s = _parse_hhmm(self.start_time)
-        if s is None:
+        total = self.end_minutes()
+        if total is None:
             return self.start_time
-        total = s.hour * 60 + s.minute + int(self.duration_minutes or 60)
         return f"{(total // 60) % 24:02d}:{total % 60:02d}"
+
+    def overlaps(self, other):
+        """True if this session's time range intersects ``other``'s."""
+        a_start, a_end = self.start_minutes(), self.end_minutes()
+        b_start, b_end = other.start_minutes(), other.end_minutes()
+        if None in (a_start, a_end, b_start, b_end):
+            return False
+        return a_start < b_end and b_start < a_end
+
+    @staticmethod
+    def find_clash(tutor_id, session_date, start_time, duration_minutes,
+                   room="", exclude_id=None):
+        """Find an existing session a proposed booking would clash with.
+
+        A clash is either the same tutor or the same room already committed
+        to an overlapping time on the same day. Cancelled sessions occupy
+        neither, so they are skipped.
+
+        ``exclude_id`` lets a session being rescheduled ignore itself.
+
+        Returns ``(session, reason)`` with reason 'tutor' or 'room', or
+        ``(None, None)`` when the slot is free.
+        """
+        probe = Session(tutor_id=tutor_id, session_date=session_date,
+                        start_time=start_time, duration_minutes=duration_minutes)
+        room_key = (room or "").strip().casefold()
+        same_day = Session.query.filter(
+            Session.session_date == session_date,
+            Session.status != "cancelled",
+        )
+        if exclude_id is not None:
+            same_day = same_day.filter(Session.id != exclude_id)
+        for existing in same_day:
+            if not existing.overlaps(probe):
+                continue
+            if existing.tutor_id == tutor_id:
+                return existing, "tutor"
+            if room_key and (existing.room or "").strip().casefold() == room_key:
+                return existing, "room"
+        return None, None
 
     def weekday(self):
         if isinstance(self.session_date, date_cls):
