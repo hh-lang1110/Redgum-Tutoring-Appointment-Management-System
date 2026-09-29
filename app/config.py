@@ -16,10 +16,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 
+DEV_SECRET_PLACEHOLDER = "dev-secret-change-me"
+
+
 class BaseConfig:
     """Settings shared by every environment."""
 
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    SECRET_KEY = os.environ.get("SECRET_KEY", DEV_SECRET_PLACEHOLDER)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", f"sqlite:///{BASE_DIR / 'instance' / 'redgum.sqlite3'}"
@@ -27,6 +30,16 @@ class BaseConfig:
     # Timetable window
     TIMETABLE_START_HOUR = int(os.environ.get("TIMETABLE_START_HOUR", "9"))
     TIMETABLE_END_HOUR = int(os.environ.get("TIMETABLE_END_HOUR", "20"))
+
+    @classmethod
+    def init_app(cls, app):
+        """Validate this environment's settings before the app serves traffic.
+
+        Flask's ``Config.from_object`` copies uppercase attributes onto
+        ``app.config`` and nothing more -- it never calls ``init_app``. Unless
+        ``create_app`` invokes this explicitly, every guard defined below is
+        unreachable.
+        """
 
 
 class DevelopmentConfig(BaseConfig):
@@ -47,8 +60,10 @@ class ProductionConfig(BaseConfig):
 
     @classmethod
     def init_app(cls, app):
-        # Fail fast in production if no secret is provided.
-        if not app.config.get("SECRET_KEY") or app.config["SECRET_KEY"] == "dev-secret-change-me":
+        super().init_app(app)
+        # Fail fast rather than signing sessions with a value that is public
+        # in the repository.
+        if app.config.get("SECRET_KEY") in (None, "", DEV_SECRET_PLACEHOLDER):
             raise RuntimeError(
                 "SECRET_KEY environment variable must be set in production."
             )
