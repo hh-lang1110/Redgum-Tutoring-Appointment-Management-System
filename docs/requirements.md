@@ -28,7 +28,7 @@ The system is a **lightweight internal web application** used by centre staff on
 | TR-2 | Create a new tutor record. |
 | TR-3 | View and edit an existing tutor record. |
 | TR-4 | Mark a tutor as inactive (soft delete) instead of removing history. |
-| TR-5 | Validate required fields: name, at least one subject, contact email/phone. |
+| TR-5 | Validate required fields: name and at least one subject. Contact details are optional but length-checked. |
 
 ### 2.2 Student Profile Management
 | ID | Requirement |
@@ -37,12 +37,12 @@ The system is a **lightweight internal web application** used by centre staff on
 | SR-2 | Create a new student record. |
 | SR-3 | View and edit an existing student record. |
 | SR-4 | Mark a student as inactive (soft delete). |
-| SR-5 | Validate required fields: name, grade, parent contact. |
+| SR-5 | Validate required fields: name. Year level and parent contact are optional but length-checked. |
 
 ### 2.3 Lesson Booking
 | ID | Requirement |
 |---|---|
-| BR-1 | Book a lesson: choose tutor, student, subject, weekday, start time, duration and room. |
+| BR-1 | Book a lesson: choose tutor, student, subject, date, start time, duration and room. The session must fall entirely inside one of the tutor's availability windows for that weekday. |
 | BR-2 | Prevent **tutor double-booking**: the same tutor cannot have two lessons overlapping in time. |
 | BR-3 | Prevent **room double-booking**: the same room cannot host two lessons overlapping in time. |
 | BR-4 | The booked subject must be one of the tutor's subjects and one of the student's enrolled subjects. |
@@ -81,9 +81,35 @@ The system is a **lightweight internal web application** used by centre staff on
 
 ## 5. Data Model (Logical)
 
-- **Tutor**: id, name, subjects (CSV), qualification, phone, email, availability_note, is_active, created_at.
-- **Student**: id, name, grade_level, parent_name, parent_phone, parent_email, enrolled_subjects (CSV), is_active, created_at.
-- **Booking**: id, tutor_id (FK), student_id (FK), subject, weekday (0=Mon … 5=Sat), start_time, duration_minutes, room, is_cancelled, created_at.
+This section describes the entities as implemented in `app/models.py`.
+
+- **Tutor**: id, name, subjects (CSV), qualification, phone, email, is_active, created_at.
+- **TutorAvailability**: id, tutor_id (FK), day_of_week (0=Mon … 6=Sun), start_time, end_time (HH:MM).
+  A tutor may have several windows per weekday. A session must fall entirely
+  inside one of them.
+- **Student**: id, name, year_level, parent_name, parent_phone, parent_email, enrolled_subjects (CSV), is_active, created_at.
+- **Session**: id, tutor_id (FK), student_id (FK), subject, session_date, start_time, duration_minutes, room, status, notes, created_at.
+
+### 5.1 Deviations from the original draft
+
+The first draft of this document described the booking entity differently
+from the implementation, and the two were reconciled in favour of the code:
+
+| Draft | Implemented | Reason |
+|---|---|---|
+| `Booking` entity | `Session` | "Booking" also names the *act* of booking; naming the entity after the record it produces avoids ambiguity in the routes and the report. |
+| `weekday` (0=Mon … 5=Sat) | `session_date` (a real date) | A weekday alone cannot distinguish one week from another, so the timetable could not be navigated forward or backward. |
+| `grade_level` | `year_level` | Matches the wording used by the centre. |
+| `is_cancelled` (boolean) | `status` (booked / attended / cancelled / missed) | A boolean cannot record that a lesson actually took place or was missed, which the centre records today. |
+
+`TutorAvailability` was added because the core availability rule (section
+2.3, BR-1) cannot be expressed without it.
+
+Contact details (TR-5, SR-5) were relaxed from required to optional:
+the centre does not always hold a parent email at enrolment, and
+refusing to create the student record until it is supplied would push
+staff back onto paper. Every text field is still length-checked against
+its column width, which is what actually protects the database.
 
 ## 6. Acceptance Criteria
 

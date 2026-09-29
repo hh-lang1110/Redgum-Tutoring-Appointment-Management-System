@@ -11,10 +11,15 @@ Ipswich, QLD. It replaces the paper diary and whiteboard with a single weekly sc
   (booked -> attended / cancelled / missed); move and cancel.
 - **Core rule**: a session may only be booked entirely inside one of the tutor's
   availability windows for that weekday.
-- **Views**: weekly schedule, a tutor's own upcoming sessions, a student's session history.
+- **Rooms**: each session records the room it occupies; a room cannot host two
+  overlapping sessions, and neither can a tutor.
+- **Subject matching**: a session must be in a subject the tutor teaches and the
+  student is enrolled in.
+- **Views**: weekly schedule (filterable by tutor, student or room), a tutor's own
+  upcoming sessions, a student's session history, and a statistics dashboard.
 
-Explicitly out of scope: room allocation, double-booking detection, invoicing,
-payments, notifications, parent portal, blue-card tracking.
+Explicitly out of scope: invoicing, payments, notifications, parent portal,
+blue-card tracking.
 
 ## Tech stack
 
@@ -71,21 +76,44 @@ flask db upgrade && flask seed-db
 
 ```
 app/
-  __init__.py        # application factory
+  __init__.py        # application factory, blueprint registration, error pages
   config.py          # Development / Testing / Production config classes
   models.py          # Tutor, TutorAvailability, Student, Session
+  validation.py      # field-length and availability-window validation
   seed.py            # demo data (case study Documents A & B)
   routes/
+    _util.py         # safe_redirect_target
     tutors.py        # CRUD + availability window management
     students.py      # CRUD + session history
     sessions.py      # book, move, set status, tutor's own view
-    schedule.py      # weekly view
-tests/smoke_test.py  # CI smoke test
+    schedule.py      # weekly view + tutor/student/room filters
+    stats.py         # statistics dashboard
+  templates/
+migrations/          # Alembic revisions; owns the schema
+tests/               # pytest suite
+docs/                # requirements specification
+```
+
+## Testing
+
+```bash
+pip install -r requirements-dev.txt
+pytest          # 101 tests
+ruff check .    # lint
 ```
 
 ## Branching
+
+Work is done on short-lived branches merged with `--no-ff`, so the history
+records where each change came from.
 
 - `main` - release v1.0.0
 - `feature/ke-requirements` - requirements & data model
 - `feature/han-technical` - Flask app, config, deployment, CI
 - `feature/liu-project-integration` - README, CHANGELOG, CI
+
+Branches used to bring v1.0.0 to its released state: `chore/align-team-attribution`,
+`fix/environment-config-guards`, `feature/data-model-completion`,
+`feature/booking-validation`, `feature/statistics-dashboard`,
+`feature/timetable-filters`, `build/database-migrations`, `build/quality-and-ci`,
+`docs/align-with-implementation`.
