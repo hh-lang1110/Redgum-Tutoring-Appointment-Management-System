@@ -58,6 +58,17 @@ point contained and what was wrong with it.
 
 ### Fixed
 
+- A session could be given a negative duration, which the form's
+  `min="30"` did not prevent: the value was only checked for truthiness.
+  Because every time-based rule compares a start against an end, such a
+  session also passed the availability check and never registered as a
+  clash, so it could be booked on top of an existing lesson without the
+  conflict check firing. Durations are now bounded to 30-480 minutes, on
+  both the booking and the move endpoints.
+- A session could be booked on a Sunday. It was stored and counted by the
+  statistics dashboard but never appeared in the weekly timetable, which
+  covers Monday to Saturday. Availability could also be recorded for
+  Sunday. The bookable range is now enforced consistently.
 - A pre-existing database created by the old `db.create_all()` was missing
   every column added afterwards and would fail with
   `no such column: sessions.room` with nothing pointing at the cause.
