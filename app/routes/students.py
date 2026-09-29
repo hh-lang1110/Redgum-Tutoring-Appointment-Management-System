@@ -16,14 +16,16 @@ def new_student():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         year_level = request.form.get("year_level", "").strip()
-        parent_contact = request.form.get("parent_contact", "").strip()
+        parent_name = request.form.get("parent_name", "").strip()
         parent_phone = request.form.get("parent_phone", "").strip()
+        parent_email = request.form.get("parent_email", "").strip()
         enrolled = request.form.get("enrolled_subjects", "").strip()
         if not name:
             flash("Student name is required.", "danger")
             return render_template("students/form.html", student={})
-        s = Student(name=name, year_level=year_level, parent_contact=parent_contact,
-                    parent_phone=parent_phone, enrolled_subjects=enrolled)
+        s = Student(name=name, year_level=year_level, parent_name=parent_name,
+                    parent_phone=parent_phone, parent_email=parent_email,
+                    enrolled_subjects=enrolled)
         db.session.add(s)
         db.session.commit()
         flash(f"Student {name} added.", "success")
@@ -37,8 +39,9 @@ def edit_student(student_id):
     if request.method == "POST":
         s.name = request.form.get("name", s.name).strip() or s.name
         s.year_level = request.form.get("year_level", s.year_level).strip()
-        s.parent_contact = request.form.get("parent_contact", s.parent_contact).strip()
+        s.parent_name = request.form.get("parent_name", s.parent_name).strip()
         s.parent_phone = request.form.get("parent_phone", s.parent_phone).strip()
+        s.parent_email = request.form.get("parent_email", s.parent_email).strip()
         s.enrolled_subjects = request.form.get("enrolled_subjects", s.enrolled_subjects).strip()
         if request.form.get("deactivate"):
             s.is_active = False

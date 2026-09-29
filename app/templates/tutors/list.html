@@ -6,13 +6,14 @@
   <a class="btn btn-primary" href="{{ url_for('tutors.new_tutor') }}">+ Add tutor</a>
 </div>
 <table class="table table-striped">
-  <thead><tr><th>Name</th><th>Subjects</th><th>Phone</th><th>Availability</th><th>Status</th><th></th></tr></thead>
+  <thead><tr><th>Name</th><th>Subjects</th><th>Qualification</th><th>Contact</th><th>Availability</th><th>Status</th><th></th></tr></thead>
   <tbody>
   {% for tu in tutors %}
     <tr>
       <td>{{ tu.name }}</td>
       <td>{{ tu.subjects }}</td>
-      <td>{{ tu.phone }}</td>
+      <td>{{ tu.qualification }}</td>
+      <td>{{ tu.phone }}{% if tu.email %}<br><span class="text-muted small">{{ tu.email }}</span>{% endif %}</td>
       <td>
         {% for w in tu.availability %}
           <span class="badge bg-secondary me-1">{{ w.day_name() }} {{ w.start_time }}-{{ w.end_time }}</span>

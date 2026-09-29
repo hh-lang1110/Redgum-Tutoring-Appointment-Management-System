@@ -7,8 +7,12 @@
     <input class="form-control" name="name" value="{{ tutor.name or '' }}" required></div>
   <div class="col-md-6"><label class="form-label">Subjects (comma separated)</label>
     <input class="form-control" name="subjects" value="{{ tutor.subjects or '' }}" required></div>
-  <div class="col-md-6"><label class="form-label">Phone</label>
+  <div class="col-md-6"><label class="form-label">Qualification</label>
+    <input class="form-control" name="qualification" value="{{ tutor.qualification or '' }}"></div>
+  <div class="col-md-3"><label class="form-label">Phone</label>
     <input class="form-control" name="phone" value="{{ tutor.phone or '' }}"></div>
+  <div class="col-md-3"><label class="form-label">Email</label>
+    <input type="email" class="form-control" name="email" value="{{ tutor.email or '' }}"></div>
   <div class="col-12">
     <button class="btn btn-primary" type="submit">Save</button>
     {% if tutor.id and tutor.is_active %}
