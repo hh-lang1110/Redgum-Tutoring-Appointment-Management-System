@@ -35,7 +35,11 @@ class DevelopmentConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    # Use a file-based temp SQLite so the schema persists across connections
+    # (in-memory SQLite can reset between connections on Linux CI runners).
+    import tempfile
+    _db_fd, _db_path = tempfile.mkstemp(suffix=".sqlite3")
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{_db_path}"
 
 
 class ProductionConfig(BaseConfig):
