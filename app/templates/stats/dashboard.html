@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Statistics - Redgum{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Statistics</h2>
+  <div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('stats.dashboard', week=prev_week) }}">&laquo; Prev</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('stats.dashboard') }}">This week</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('stats.dashboard', week=next_week) }}">Next &raquo;</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card text-bg-primary h-100">
+      <div class="card-body">
+        <div class="display-6">{{ active_tutors }}</div>
+        <div>Active tutors</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-bg-success h-100">
+      <div class="card-body">
+        <div class="display-6">{{ active_students }}</div>
+        <div>Active students</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-bg-info h-100">
+      <div class="card-body">
+        <div class="display-6">{{ week_total }}</div>
+        <div>Bookings this week</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h4>
+  Week of {{ monday.strftime("%d %b %Y") }} &ndash; {{ sunday.strftime("%d %b %Y") }}
+  {% if is_current_week %}<span class="badge bg-secondary align-middle">current</span>{% endif %}
+</h4>
+
+{% if subjects %}
+<table class="table w-auto align-middle">
+  <thead><tr><th>Subject</th><th class="text-end">Bookings</th><th>Share</th></tr></thead>
+  <tbody>
+  {% for name, count in subjects %}
+    <tr>
+      <td>{{ name }}</td>
+      <td class="text-end">{{ count }}</td>
+      <td><div class="bg-primary rounded" style="height:14px;width:{{ (count * 260 // peak) or 6 }}px"></div></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-muted">No bookings recorded for this week.</p>
+{% endif %}
+{% endblock %}
