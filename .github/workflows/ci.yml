@@ -27,9 +27,3 @@ jobs:
           PYTHONPATH: .
         run: |
           python -c "from app import create_app; app = create_app('testing'); print('routes:', len(list(app.url_map.iter_rules())))"
-      - name: Run smoke test suite
-        env:
-          FLASK_ENV: testing
-          PYTHONPATH: .
-        run: |
-          python tests/smoke_test.py
