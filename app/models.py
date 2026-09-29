@@ -10,7 +10,8 @@ Domain model aligned with the case study:
 
 Author: Ke (Business & Requirements); implementation by Han (Technical Lead).
 """
-from datetime import datetime, time, date as date_cls
+from datetime import UTC, datetime, time
+from datetime import date as date_cls
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -23,7 +24,18 @@ WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday",
 SESSION_STATUSES = ["booked", "attended", "cancelled", "missed"]
 
 
-def _to_minutes(value):
+def _utcnow():
+    """Current UTC time as a naive datetime, matching the DateTime columns.
+
+    ``datetime.utcnow()`` is deprecated from Python 3.12 and returns a naive
+    value that is easy to mistake for local time. Deriving from an aware
+    ``now(timezone.utc)`` keeps the intent explicit while storing the same
+    naive-UTC values the existing columns and rows already hold.
+    """
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
+def to_minutes(value):
     """Minutes past midnight for an 'HH:MM' string, or None if it is invalid."""
     if not value:
         return None
@@ -39,7 +51,7 @@ def _to_minutes(value):
 
 def _parse_hhmm(value):
     """A datetime.time for an 'HH:MM' string, or None if it is invalid."""
-    total = _to_minutes(value)
+    total = to_minutes(value)
     return None if total is None else time(total // 60, total % 60)
 
 
@@ -53,7 +65,7 @@ class Tutor(db.Model):
     phone = db.Column(db.String(40), default="")
     email = db.Column(db.String(120), default="")
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     availability = db.relationship(
         "TutorAvailability", back_populates="tutor",
@@ -127,7 +139,7 @@ class Student(db.Model):
     parent_email = db.Column(db.String(120), default="")
     enrolled_subjects = db.Column(db.String(255), default="")
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     sessions = db.relationship("Session", back_populates="student", lazy="dynamic")
 
@@ -153,14 +165,14 @@ class Session(db.Model):
     room = db.Column(db.String(40), default="")
     status = db.Column(db.String(20), default="booked", nullable=False)
     notes = db.Column(db.String(255), default="")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     tutor = db.relationship("Tutor", back_populates="sessions")
     student = db.relationship("Student", back_populates="sessions")
 
     def start_minutes(self):
         """Minutes past midnight for the session start, or None if invalid."""
-        return _to_minutes(self.start_time)
+        return to_minutes(self.start_time)
 
     def end_minutes(self):
         """Minutes past midnight for the session end, or None if invalid."""

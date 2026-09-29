@@ -1,7 +1,9 @@
 ﻿"""Flask application factory."""
 import os
-from flask import Flask, redirect, url_for
+
+from flask import Flask, redirect, render_template, url_for
 from flask_migrate import Migrate, upgrade
+
 from .config import get_config
 from .models import db
 from .seed import seed_database
@@ -23,11 +25,11 @@ def create_app(config_name=None):
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from .routes.tutors import bp as tutors_bp
-    from .routes.students import bp as students_bp
-    from .routes.sessions import bp as sessions_bp
     from .routes.schedule import bp as schedule_bp
+    from .routes.sessions import bp as sessions_bp
     from .routes.stats import bp as stats_bp
+    from .routes.students import bp as students_bp
+    from .routes.tutors import bp as tutors_bp
 
     app.register_blueprint(tutors_bp, url_prefix="/tutors")
     app.register_blueprint(students_bp, url_prefix="/students")
@@ -38,6 +40,18 @@ def create_app(config_name=None):
     @app.route("/")
     def index():
         return redirect(url_for("schedule.weekly"))
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(500)
+    def server_error(error):
+        # A failed flush can leave the session unusable, and rendering the
+        # error page would then fail as well. Roll back first so the page
+        # renders and the next request starts from a clean session.
+        db.session.rollback()
+        return render_template("errors/500.html"), 500
 
     @app.cli.command("seed-db")
     def seed_db_command():
