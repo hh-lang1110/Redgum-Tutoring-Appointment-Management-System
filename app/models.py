@@ -7,7 +7,7 @@ Domain model aligned with the case study:
   windows for that weekday. Room allocation and double-booking detection are
   explicitly out of scope per the brief.
 
-Author: Vivian (Business & Requirements); implementation by Charon (Technical Lead).
+Author: Ke (Business & Requirements); implementation by Han (Technical Lead).
 """
 from datetime import datetime, time, date as date_cls
 

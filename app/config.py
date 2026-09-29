@@ -4,7 +4,7 @@ Configuration is environment-driven: environment-specific values are read
 from environment variables (or a local .env file) so that no secret is
 ever committed to source control.
 
-Author: Charon (Technical Lead)
+Author: Han (Technical Lead)
 """
 import os
 from pathlib import Path

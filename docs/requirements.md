@@ -1,7 +1,7 @@
 # Redgum Tutoring Appointment Management System — Requirements Specification
 
-**Author:** Vivian (Business & Requirements Lead)
-**Status:** Approved by PM (Eva)
+**Author:** Ke (Business & Requirements Lead)
+**Status:** Approved by PM (Liu)
 **Version:** 1.0
 **Date:** Day 1
 
