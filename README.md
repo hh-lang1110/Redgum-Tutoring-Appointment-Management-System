@@ -1,92 +1,59 @@
-# Redgum Tutoring Appointment Management System
+﻿# Redgum Tutoring Appointment Management System
 
-A lightweight internal web application for Redgum Tutoring (single centre) to
-digitise tutor and student records, manage lesson bookings, view the weekly
-timetable and produce basic operational statistics.
+A small internal web application for Redgum Tutoring, an after-school tutoring centre in
+Ipswich, QLD. It replaces the paper diary and whiteboard with a single weekly schedule.
 
-Built for ISYS3001 Assessment 2 — Software Configuration & Procurement Management.
+## Scope (per case study)
 
-## Features
+- **Students**: create, find, update, make inactive.
+- **Tutors**: create, find, update, deactivate; maintain weekly **availability windows**.
+- **Sessions**: book one student with one tutor on a date/time; status lifecycle
+  (booked -> attended / cancelled / missed); move and cancel.
+- **Core rule**: a session may only be booked entirely inside one of the tutor's
+  availability windows for that weekday.
+- **Views**: weekly schedule, a tutor's own upcoming sessions, a student's session history.
 
-- **Tutor profiles** — name, subjects, qualification, contact, availability; soft-delete.
-- **Student profiles** — name, grade, parent contact, enrolled subjects; soft-delete.
-- **Lesson booking** — tutor–student pairing with automatic **tutor** and **room** conflict detection.
-- **Weekly timetable** — Mon–Sat grid (09:00–20:00), filterable by tutor / student / room.
-- **Statistics dashboard** — active tutors, active students, weekly bookings, subject distribution.
+Explicitly out of scope: room allocation, double-booking detection, invoicing,
+payments, notifications, parent portal, blue-card tracking.
 
 ## Tech stack
 
-| Layer | Choice |
-|---|---|
-| Language | Python 3.11+ |
-| Web framework | Flask 3 |
-| ORM | Flask-SQLAlchemy |
-| Database | SQLite (dev) / PostgreSQL (prod via `DATABASE_URL`) |
-| Frontend | Server-rendered Jinja2 templates + Bootstrap 5 (CDN) |
-| WSGI server | Gunicorn |
-| Container | Dockerfile |
-| PaaS deploy | Render (`Procfile`) |
-| CI | GitHub Actions |
+Python 3.12 + Flask 3 + Flask-SQLAlchemy + Bootstrap 5 (CDN) + SQLite (dev) /
+PostgreSQL (prod). Deployable via Dockerfile or Render Procfile.
 
-## Project structure
-
-```
-app/
-  __init__.py        # Flask app factory
-  config.py          # Dev / Testing / Production config classes
-  models.py          # Tutor, Student, Booking
-  seed.py            # Demo data
-  routes/            # tutors, students, bookings, timetable, stats
-  templates/         # Jinja2 pages
-  static/css/        # Custom styles
-docs/
-  requirements.md    # Functional and non-functional requirements
-.github/
-  workflows/ci.yml    # CI pipeline
-.env.example         # Template for local environment
-Dockerfile
-Procfile
-requirements.txt
-run.py               # gunicorn entry point
-```
-
-## Configuration management
-
-All environment-specific values are read from environment variables (see
-`.env.example`). Three configuration classes in `app/config.py` target
-`development`, `testing` and `production`; production refuses to start with the
-default `SECRET_KEY`.
-
-## Quick start (local)
+## Run from a clean checkout
 
 ```bash
 python -m venv .venv
-. .venv/bin/activate        # Windows: .venv\Scripts\activate
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env        # then edit .env if needed
-flask --app run.py seed-db   # create tables and insert demo data
-flask --app run.py --debug run
-# open http://127.0.0.1:5000
+cp .env.example .env          # Windows: copy .env.example .env
+flask --app run.py seed-db    # optional: insert demo data
+python run.py
 ```
 
-## Branching strategy
+Open http://127.0.0.1:5000/
 
-- `main` — production-ready, protected.
-- `feature/vivian-requirements` — requirements spec, data models, seed data.
-- `feature/charon-technical` — application code, deployment config.
-- `feature/eva-project-integration` — README, CHANGELOG, CI, final merge.
+## Project layout
 
-Each feature branch is merged into `main` through a pull request. Commit
-messages follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`).
+```
+app/
+  __init__.py        # application factory
+  config.py          # Development / Testing / Production config classes
+  models.py          # Tutor, TutorAvailability, Student, Session
+  seed.py            # demo data (case study Documents A & B)
+  routes/
+    tutors.py        # CRUD + availability window management
+    students.py      # CRUD + session history
+    sessions.py      # book, move, set status, tutor's own view
+    schedule.py      # weekly view
+tests/smoke_test.py  # CI smoke test
+```
 
-## Team
+## Branching
 
-| Role | Person | Branch |
-|---|---|---|
-| Project Manager / Integration | Eva (Liu) | `feature/eva-project-integration` |
-| Technical Lead | Charon (Han) | `feature/charon-technical` |
-| Business & Requirements | Vivian (Ke) | `feature/vivian-requirements` |
-
-## License
-
-Academic project — not for redistribution.
+- `main` - release v1.0.0
+- `feature/vivian-requirements` - requirements & data model
+- `feature/charon-technical` - Flask app, config, deployment, CI
+- `feature/eva-project-integration` - README, CHANGELOG, CI

@@ -1,0 +1,17 @@
+﻿{% extends "base.html" %}
+{% block title %}My sessions - {{ tutor.name }}{% endblock %}
+{% block content %}
+<h2>{{ tutor.name }} - upcoming sessions</h2>
+<table class="table table-striped">
+  <thead><tr><th>Date</th><th>Day</th><th>Start</th><th>Student</th><th>Subject</th></tr></thead>
+  <tbody>
+  {% for s in sessions %}
+    <tr><td>{{ s.session_date }}</td><td>{{ s.weekday_name() }}</td>
+      <td>{{ s.start_time }}</td><td>{{ s.student.name }}</td><td>{{ s.subject }}</td></tr>
+  {% else %}
+    <tr><td colspan="5" class="text-muted">No upcoming sessions.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<a href="{{ url_for('tutors.list_tutors') }}" class="btn btn-secondary">Back to tutors</a>
+{% endblock %}

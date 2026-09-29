@@ -1,26 +1,29 @@
-{% extends "base.html" %}
-{% block title %}Tutors · Redgum Tutoring{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Tutors - Redgum{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center">
-  <h1>Tutors</h1>
-  <a class="btn btn-primary" href="{{ url_for('tutors.create_tutor') }}">+ New Tutor</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Tutors</h2>
+  <a class="btn btn-primary" href="{{ url_for('tutors.new_tutor') }}">+ Add tutor</a>
 </div>
-<table class="table table-striped mt-3">
-  <thead><tr>
-    <th>Name</th><th>Subjects</th><th>Qualification</th><th>Contact</th><th>Status</th><th></th>
-  </tr></thead>
+<table class="table table-striped">
+  <thead><tr><th>Name</th><th>Subjects</th><th>Phone</th><th>Availability</th><th>Status</th><th></th></tr></thead>
   <tbody>
-  {% for t in tutors %}
+  {% for tu in tutors %}
     <tr>
-      <td>{{ t.name }}</td>
-      <td>{{ t.subjects }}</td>
-      <td>{{ t.qualification }}</td>
-      <td>{{ t.phone }}<br>{{ t.email }}</td>
-      <td>{% if t.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
-      <td><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('tutors.edit_tutor', tutor_id=t.id) }}">Edit</a></td>
+      <td>{{ tu.name }}</td>
+      <td>{{ tu.subjects }}</td>
+      <td>{{ tu.phone }}</td>
+      <td>
+        {% for w in tu.availability %}
+          <span class="badge bg-secondary me-1">{{ w.day_name() }} {{ w.start_time }}-{{ w.end_time }}</span>
+        {% else %}<span class="text-muted">none set</span>{% endfor %}
+      </td>
+      <td>{% if tu.is_active %}<span class="badge bg-success">active</span>{% else %}<span class="badge bg-secondary">inactive</span>{% endif %}</td>
+      <td>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('tutors.edit_tutor', tutor_id=tu.id) }}">Edit</a>
+        <a class="btn btn-sm btn-outline-info" href="{{ url_for('sessions.tutor_sessions', tutor_id=tu.id) }}">My sessions</a>
+      </td>
     </tr>
-  {% else %}
-    <tr><td colspan="6">No tutors yet.</td></tr>
   {% endfor %}
   </tbody>
 </table>

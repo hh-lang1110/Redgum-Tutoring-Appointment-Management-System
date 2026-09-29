@@ -1,0 +1,18 @@
+﻿{% extends "base.html" %}
+{% block title %}Move session - Redgum{% endblock %}
+{% block content %}
+<h2>Move session #{{ s.id }}</h2>
+<p class="text-muted">{{ s.tutor.name }} with {{ s.student.name }} &middot; currently {{ s.session_date }} {{ s.start_time }} ({{ s.duration_minutes }} min)</p>
+<form method="post" class="row g-3">
+  <div class="col-md-4"><label class="form-label">New date</label>
+    <input type="date" class="form-control" name="session_date" value="{{ s.session_date }}" required></div>
+  <div class="col-md-3"><label class="form-label">New start time</label>
+    <input class="form-control" name="start_time" value="{{ s.start_time }}" required></div>
+  <div class="col-md-3"><label class="form-label">Duration (min)</label>
+    <input type="number" class="form-control" name="duration_minutes" value="{{ s.duration_minutes }}" min="30" step="15"></div>
+  <div class="col-12">
+    <button class="btn btn-primary">Move</button>
+    <a class="btn btn-secondary" href="{{ url_for('sessions.list_sessions') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

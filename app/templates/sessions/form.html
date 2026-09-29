@@ -1,0 +1,30 @@
+﻿{% extends "base.html" %}
+{% block title %}Book session - Redgum{% endblock %}
+{% block content %}
+<h2>Book a session</h2>
+<form method="post" class="row g-3">
+  <div class="col-md-6"><label class="form-label">Tutor</label>
+    <select name="tutor_id" class="form-select" required>
+      <option value="">-- choose --</option>
+      {% for tu in tutors %}<option value="{{ tu.id }}">{{ tu.name }} ({{ tu.subjects }})</option>{% endfor %}
+    </select></div>
+  <div class="col-md-6"><label class="form-label">Student</label>
+    <select name="student_id" class="form-select" required>
+      <option value="">-- choose --</option>
+      {% for st in students %}<option value="{{ st.id }}">{{ st.name }} ({{ st.year_level }})</option>{% endfor %}
+    </select></div>
+  <div class="col-md-4"><label class="form-label">Subject</label>
+    <input class="form-control" name="subject" value="{{ form.subject or '' }}" required></div>
+  <div class="col-md-4"><label class="form-label">Date</label>
+    <input type="date" class="form-control" name="session_date" value="{{ form.session_date or '' }}" required></div>
+  <div class="col-md-2"><label class="form-label">Start time</label>
+    <input class="form-control" name="start_time" value="{{ form.start_time or '15:30' }}" required></div>
+  <div class="col-md-2"><label class="form-label">Duration (min)</label>
+    <input type="number" class="form-control" name="duration_minutes" value="{{ form.duration_minutes or 60 }}" min="30" step="15"></div>
+  <div class="col-12">
+    <button class="btn btn-primary">Book</button>
+    <a class="btn btn-secondary" href="{{ url_for('sessions.list_sessions') }}">Cancel</a>
+  </div>
+</form>
+<p class="text-muted mt-3">The system checks that the session falls entirely inside the tutor's availability window.</p>
+{% endblock %}
