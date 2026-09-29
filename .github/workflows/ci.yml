@@ -26,21 +26,9 @@ jobs:
           FLASK_ENV: testing
         run: |
           python -c "from app import create_app; app = create_app('testing'); print('routes:', len(list(app.url_map.iter_rules())))"
-      - name: Seed and hit every page
+      - name: Seed and hit every route
         env:
           FLASK_ENV: testing
+          PYTHONPATH: .
         run: |
-          python - <<'PY'
-          from app import create_app
-          from app.models import db
-          app = create_app('testing')
-          with app.app_context():
-              db.create_all()
-              from app.seed import seed_database
-              seed_database()
-              c = app.test_client()
-              for url in ['/', '/stats/', '/tutors/', '/students/', '/bookings/', '/timetable/']:
-                  r = c.get(url)
-                  assert r.status_code == 200 or r.status_code == 302, (url, r.status_code)
-              print('all pages OK')
-          PY
+          python tests/smoke_test.py
