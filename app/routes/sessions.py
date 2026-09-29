@@ -43,11 +43,34 @@ def new_session():
             flash("All fields are required.", "danger")
             return render_template("sessions/form.html", tutors=tutors, students=students)
         tutor = Tutor.query.get(tutor_id)
+        student = Student.query.get(student_id)
+
+        # BR-4: the subject must be one the tutor teaches and one the student
+        # is enrolled in, or the booking is meaningless.
+        if not tutor.teaches(subject):
+            flash(f"{tutor.name} is not listed to teach {subject}.", "danger")
+            return render_template("sessions/form.html", tutors=tutors, students=students,
+                                   form=request.form)
+        if not student.enrolled_in(subject):
+            flash(f"{student.name} is not enrolled in {subject}.", "danger")
+            return render_template("sessions/form.html", tutors=tutors, students=students,
+                                   form=request.form)
+
         ok, reason = tutor.can_fit(d.weekday(), start_time, duration)
         if not ok:
             flash(reason, "danger")
             return render_template("sessions/form.html", tutors=tutors, students=students,
                                    form=request.form)
+
+        # BR-2 / BR-3: neither the tutor nor the room may be double-booked.
+        clash, kind = Session.find_clash(tutor_id, d, start_time, duration, room)
+        if clash is not None:
+            busy = tutor.name if kind == "tutor" else room
+            flash(f"{busy} is already booked "
+                  f"{clash.start_time}-{clash.end_time()} on {clash.session_date}.", "danger")
+            return render_template("sessions/form.html", tutors=tutors, students=students,
+                                   form=request.form)
+
         s = Session(tutor_id=tutor_id, student_id=student_id, subject=subject,
                     session_date=d, start_time=start_time, duration_minutes=duration,
                     room=room, status="booked")
@@ -71,8 +94,15 @@ def move_session(sid):
         else:
             tutor = s.tutor
             ok, reason = tutor.can_fit(d.weekday(), start_time, duration)
+            clash, kind = Session.find_clash(tutor.id, d, start_time, duration, room,
+                                             exclude_id=s.id)
             if not ok:
                 flash(reason, "danger")
+            elif clash is not None:
+                busy = tutor.name if kind == "tutor" else room
+                flash(f"{busy} is already booked "
+                      f"{clash.start_time}-{clash.end_time()} on {clash.session_date}.",
+                      "danger")
             else:
                 s.session_date = d
                 s.start_time = start_time
