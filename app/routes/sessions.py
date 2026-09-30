@@ -1,7 +1,11 @@
 ﻿"""Sessions: create, move, cancel, mark attended/missed, tutor's own view."""
-from datetime import date, datetime, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from ..models import db, Session, Tutor, Student, SESSION_STATUSES
+from datetime import date, datetime
+
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+
+from ..models import SESSION_STATUSES, Session, Student, Tutor, db
+from ..validation import duration_error, length_errors, timetable_day_error
+from ._util import safe_redirect_target
 
 bp = Blueprint("sessions", __name__, url_prefix="/sessions")
 
@@ -38,18 +42,60 @@ def new_session():
         d = _parse_date(request.form.get("session_date", ""))
         start_time = request.form.get("start_time", "").strip()
         duration = request.form.get("duration_minutes", 60, type=int)
-        if not (tutor_id and student_id and subject and d and start_time and duration):
-            flash("All fields are required.", "danger")
-            return render_template("sessions/form.html", tutors=tutors, students=students)
-        tutor = Tutor.query.get(tutor_id)
+        room = request.form.get("room", "").strip()
+        notes = request.form.get("notes", "").strip()
+        errors = length_errors({"subject": subject, "room": room, "notes": notes})
+        if not (tutor_id and student_id and subject and d and start_time):
+            errors.append("All fields are required.")
+        # An out-of-range duration is reported on its own terms rather than as
+        # a missing field, so a negative value cannot slip through as valid.
+        problem = duration_error(duration)
+        if problem:
+            errors.append(problem)
+        if d is not None:
+            problem = timetable_day_error(d.weekday())
+            if problem:
+                errors.append(problem)
+        if errors:
+            for message in errors:
+                flash(message, "danger")
+            return render_template("sessions/form.html", tutors=tutors, students=students,
+                                   form=request.form)
+        # db.session.get is the SQLAlchemy 2.0 form; Model.query.get is legacy.
+        tutor = db.session.get(Tutor, tutor_id)
+        student = db.session.get(Student, student_id)
+        if tutor is None or student is None:
+            abort(404)
+
+        # BR-4: the subject must be one the tutor teaches and one the student
+        # is enrolled in, or the booking is meaningless.
+        if not tutor.teaches(subject):
+            flash(f"{tutor.name} is not listed to teach {subject}.", "danger")
+            return render_template("sessions/form.html", tutors=tutors, students=students,
+                                   form=request.form)
+        if not student.enrolled_in(subject):
+            flash(f"{student.name} is not enrolled in {subject}.", "danger")
+            return render_template("sessions/form.html", tutors=tutors, students=students,
+                                   form=request.form)
+
         ok, reason = tutor.can_fit(d.weekday(), start_time, duration)
         if not ok:
             flash(reason, "danger")
             return render_template("sessions/form.html", tutors=tutors, students=students,
                                    form=request.form)
+
+        # BR-2 / BR-3: neither the tutor nor the room may be double-booked.
+        clash, kind = Session.find_clash(tutor_id, d, start_time, duration, room)
+        if clash is not None:
+            busy = tutor.name if kind == "tutor" else room
+            flash(f"{busy} is already booked "
+                  f"{clash.start_time}-{clash.end_time()} on {clash.session_date}.", "danger")
+            return render_template("sessions/form.html", tutors=tutors, students=students,
+                                   form=request.form)
+
         s = Session(tutor_id=tutor_id, student_id=student_id, subject=subject,
                     session_date=d, start_time=start_time, duration_minutes=duration,
-                    status="booked")
+                    room=room, status="booked")
         db.session.add(s)
         db.session.commit()
         flash(f"Session booked: {tutor.name} with student on {d}.", "success")
@@ -59,22 +105,42 @@ def new_session():
 
 @bp.route("/<int:sid>/move", methods=["GET", "POST"])
 def move_session(sid):
-    s = Session.query.get_or_404(sid)
+    s = db.get_or_404(Session, sid)
     if request.method == "POST":
         d = _parse_date(request.form.get("session_date", ""))
         start_time = request.form.get("start_time", "").strip()
         duration = request.form.get("duration_minutes", s.duration_minutes, type=int)
+        room = request.form.get("room", s.room or "").strip()
+        errors = length_errors({"room": room})
         if not (d and start_time):
-            flash("Date and start time are required.", "danger")
+            errors.append("Date and start time are required.")
+        problem = duration_error(duration)
+        if problem:
+            errors.append(problem)
+        if d is not None:
+            problem = timetable_day_error(d.weekday())
+            if problem:
+                errors.append(problem)
+        if errors:
+            for message in errors:
+                flash(message, "danger")
         else:
             tutor = s.tutor
             ok, reason = tutor.can_fit(d.weekday(), start_time, duration)
+            clash, kind = Session.find_clash(tutor.id, d, start_time, duration, room,
+                                             exclude_id=s.id)
             if not ok:
                 flash(reason, "danger")
+            elif clash is not None:
+                busy = tutor.name if kind == "tutor" else room
+                flash(f"{busy} is already booked "
+                      f"{clash.start_time}-{clash.end_time()} on {clash.session_date}.",
+                      "danger")
             else:
                 s.session_date = d
                 s.start_time = start_time
                 s.duration_minutes = duration
+                s.room = room
                 db.session.commit()
                 flash("Session moved.", "success")
                 return redirect(url_for("sessions.list_sessions"))
@@ -83,19 +149,20 @@ def move_session(sid):
 
 @bp.route("/<int:sid>/status", methods=["POST"])
 def set_status(sid):
-    s = Session.query.get_or_404(sid)
+    s = db.get_or_404(Session, sid)
     new_status = request.form.get("status", "")
     if new_status not in SESSION_STATUSES:
         abort(400)
     s.status = new_status
     db.session.commit()
     flash(f"Session marked as {new_status}.", "info")
-    return redirect(request.referrer or url_for("sessions.list_sessions"))
+    return redirect(safe_redirect_target(request.referrer,
+                                         url_for("sessions.list_sessions")))
 
 
 @bp.route("/tutor/<int:tutor_id>")
 def tutor_sessions(tutor_id):
-    tutor = Tutor.query.get_or_404(tutor_id)
+    tutor = db.get_or_404(Tutor, tutor_id)
     today = date.today()
     upcoming = (Session.query
                 .filter(Session.tutor_id == tutor_id,

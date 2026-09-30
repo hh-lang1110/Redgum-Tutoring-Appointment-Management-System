@@ -1,0 +1,23 @@
+# Keep the image build context small and free of local state.
+.git
+.github
+.venv
+venv
+env
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local database and secrets must never be baked into an image.
+instance/
+*.sqlite3
+*.db
+.env
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

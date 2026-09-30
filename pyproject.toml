@@ -1,0 +1,32 @@
+# Tooling configuration. The application itself is run from run.py and is not
+# packaged, so there is deliberately no [build-system] section.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+# A warning that is allowed to pass unnoticed is a warning nobody reads.
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # import sorting
+    "UP",   # pyupgrade: modern syntax for the supported Python
+    "B",    # bugbear: likely mistakes
+    "C4",   # comprehensions
+]
+ignore = [
+    # Formatted flash messages are assembled from f-strings across lines;
+    # enforcing a limit there costs readability for no benefit.
+    "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Alembic's generated files are not ours to lint.
+"migrations/versions/*" = ["E", "W", "F", "I", "UP", "B", "C4"]

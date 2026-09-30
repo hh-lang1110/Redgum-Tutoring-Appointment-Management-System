@@ -21,6 +21,8 @@
     <input class="form-control" name="start_time" value="{{ form.start_time or '15:30' }}" required></div>
   <div class="col-md-2"><label class="form-label">Duration (min)</label>
     <input type="number" class="form-control" name="duration_minutes" value="{{ form.duration_minutes or 60 }}" min="30" step="15"></div>
+  <div class="col-md-4"><label class="form-label">Room</label>
+    <input class="form-control" name="room" value="{{ form.room or '' }}" placeholder="Room 1"></div>
   <div class="col-12">
     <button class="btn btn-primary">Book</button>
     <a class="btn btn-secondary" href="{{ url_for('sessions.list_sessions') }}">Cancel</a>

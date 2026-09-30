@@ -1,0 +1,42 @@
+# Local parity with production: the app runs against PostgreSQL rather than
+# SQLite, so anything that only works by accident on SQLite (length limits,
+# ALTER behaviour) shows up here first.
+#
+#   SECRET_KEY=some-long-random-value docker compose up --build
+#
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: redgum
+      POSTGRES_PASSWORD: redgum
+      POSTGRES_DB: redgum
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U redgum"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    environment:
+      FLASK_ENV: production
+      # Required, with no default: the app refuses to start in production
+      # without a real key, so compose fails early rather than serving with
+      # the placeholder that is public in the repository.
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY, e.g. SECRET_KEY=... docker compose up}
+      DATABASE_URL: postgresql://redgum:redgum@db:5432/redgum
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Migrate before serving. No demo data: `flask seed-db` is a
+    # development convenience and would insert the sample tutors and
+    # students into a real database.
+    command: sh -c "flask db upgrade && gunicorn --bind 0.0.0.0:5000 run:app"
+
+volumes:
+  pgdata:
