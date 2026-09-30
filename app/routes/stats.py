@@ -1,6 +1,6 @@
 """Statistics dashboard.
 
-Author: Liu (Project Manager).
+Author: Eva (Project Manager).
 
 The project charter lists a basic statistics dashboard as in scope
 (ST-1 to ST-4), but the prototype never shipped one. This module supplies

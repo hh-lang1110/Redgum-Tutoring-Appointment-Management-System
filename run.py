@@ -1,6 +1,6 @@
 """Entry point for local development.
 
-Author: Han (Technical Lead)
+Author: Charon (Technical Lead)
 """
 import os
 

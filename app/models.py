@@ -8,7 +8,7 @@ Domain model aligned with the case study:
 - Each session records the room it occupies, so the centre can publish a
   room-by-room view alongside the tutor and student views.
 
-Author: Ke (Business & Requirements); implementation by Han (Technical Lead).
+Author: Vivian (Business & Requirements); implementation by Charon (Technical Lead).
 """
 from datetime import UTC, datetime, time
 from datetime import date as date_cls

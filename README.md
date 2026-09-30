@@ -108,11 +108,11 @@ Work is done on short-lived branches merged with `--no-ff`, so the history
 records where each change came from.
 
 - `main` - release v1.0.0
-- `feature/ke-requirements` - requirements & data model
-- `feature/han-technical` - Flask app, config, deployment, CI
-- `feature/liu-project-integration` - README, CHANGELOG, CI
+- `feature/vivian-requirements` - requirements & data model
+- `feature/charon-technical` - Flask app, config, deployment, CI
+- `feature/eva-project-integration` - README, CHANGELOG, CI
 
-Branches used to bring v1.0.0 to its released state: `chore/align-team-attribution`,
+Branches used to bring v1.0.0 to its released state:
 `fix/environment-config-guards`, `feature/data-model-completion`,
 `feature/booking-validation`, `feature/statistics-dashboard`,
 `feature/timetable-filters`, `build/database-migrations`, `build/quality-and-ci`,
